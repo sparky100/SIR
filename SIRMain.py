@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import random
 
 #
-# Stocahastic SIR model k
+# Stocahastic SIR model k asd
 #
 # Deterministic
 # 2 - 80 - 79
