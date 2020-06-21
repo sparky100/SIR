@@ -19,9 +19,7 @@ InitialInfected = 1
 
 # Scenarios  - #Dictionary of scenarios, population, country name, Ro, RecoveryPeriod
 
-scenarios = [{"Country": "Scotland", "Population": 100, "R0": 2, "RecoveryPeriod": 5},
-             {"Country": "Denmark", "Population": 100, "R0": 3, "RecoveryPeriod": 5},
-             {"Country": "test", "Population": 100, "R0": 4, "RecoveryPeriod": 5}
+scenarios = [{"Country": "Scotland", "Population": 1000, "R0": 2, "RecoveryPeriod": 5}
              ]
 
 for scenario in scenarios:

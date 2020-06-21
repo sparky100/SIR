@@ -9,7 +9,7 @@ import networkx as nx
 # Deterministic
 # 2 - 80 - 79
 # 3 - 94  - 94
-# 4 - 98.6 - 98 Test dfdsf
+# 4 - 98.6 - 98 Test 
 
 
 #Set up graph
@@ -19,11 +19,11 @@ SimulationDuration = 120  # assume rates in days
 MaxNumEvents = 10000
 MaxRuns = 200
 RecoveryPeriod = 5  # 5 days to recover
-InitialInfected = 5
+InitialInfected = 3
 
 # Scenarios  - #Dictionary of scenarios, population, country name, Ro, RecoveryPeriod
 
-scenarios = [{"Country": "Scotland", "Population": 1000, "R0": 2, "RecoveryPeriod": 5}]
+scenarios = [{"Country": "Scotland", "Population": 1000, "Beta": 30, "RecoveryPeriod": 5}]
             
 
 for scenario in scenarios:
@@ -31,8 +31,8 @@ for scenario in scenarios:
     Population = scenario["Population"]
     Country = scenario["Country"]
     RecoveryPeriod = scenario["RecoveryPeriod"]
-    R0 = scenario["R0"]
-    Beta = R0 / RecoveryPeriod
+    #R0 = scenario["R0"]
+    Beta = scenario["Beta"]
     Gamma = 1. / RecoveryPeriod
     outb = 0
     rec = 0
@@ -45,7 +45,7 @@ for scenario in scenarios:
     Adj = Adj.T * Adj # Creates Symmetric Matrix => not uni directional relationship    for run in range(1, MaxRuns):
         # Zero Arrays
 
-    Adj.fill(1)
+    Adj.fill(1) # set connections between all
     
     Nodes = np.zeros(Population)
         
@@ -63,8 +63,40 @@ for scenario in scenarios:
     np.random.shuffle(Nodes) # shuffle infected nodes
     #print("Initial Setup" ,Nodes)
     
-    G = nx.from_numpy_matrix(Adj) 
+    #Assume 3 types of people
+    #Low, Medium and High
+    #Low have 4 connections, Medium has 10 connections and High = 10 connections
+      
 
+    Low=5
+    Medium=10
+    High=20
+
+    LowProp = .2
+    MedProp = .6
+    HighProp = .2
+
+    LowNum = int(Population*LowProp)
+    MedNum = int(Population*MedProp)
+    HighNum = int(Population*HighProp)
+    
+    configmatrix=[Low]*LowNum + [Medium]*MedNum + [High]*HighNum
+    #sum of degrees mut be even
+    if (sum(configmatrix) % 2 > 0):
+        configmatrix[0]=configmatrix[0]+1           
+
+    cm=np.array(configmatrix)
+    np.random.shuffle(cm)
+
+    G=nx.configuration_model(cm) # Create graph from configuration model
+    G=nx.Graph(G)
+    #G = nx.from_numpy_matrix(Adj) #Generate graph from adjacency matrix
+    ## Visualise Initial Graph
+    #pos=nx.spring_layout(G)
+    #nx.draw(G,pos)
+    
+    Adj = nx.to_numpy_array(G) #Generates Adjaceny matrix from graph
+    #print(Adj)
     SimTime = Times[0]
     NumEvents = 0
     print("Initial Infected ", Infected[NumEvents])
@@ -72,9 +104,9 @@ for scenario in scenarios:
     while (SimTime < SimulationDuration and NumEvents < MaxNumEvents and Infected[NumEvents] > 0):
 
         Rate1 = Beta*Adj.dot(Nodes==2)*(Nodes==1)/Population
+        
 
         Rate2 = Gamma * (Nodes==2)
-
         #Create matrix of rates
         
         Allprops=np.concatenate((Rate1, Rate2)) #Propensity for all events 
@@ -101,8 +133,8 @@ for scenario in scenarios:
             Susceptible.append(Susceptible[NumEvents-1]-1)
             Nodes[Node]=2 
             Event = "Infect"
-            #print(Event)
-            #print(Infected)
+#            print(Event)
+#            print(count(Infected), count(Recovered))
         else:
             #print("Num Events ", NumEvents)
             Infected.append(Infected[NumEvents-1]-1)
@@ -110,8 +142,8 @@ for scenario in scenarios:
             Susceptible.append(Susceptible[NumEvents-1])
             Nodes[Node]=3    
             Event = "Recover"
-            #print (Event)
-            #print(Recovered)
+#            print (Event)
+#            print(count(Infected), count(Recovered))
         
         Times.append(SimTime)
                    
@@ -120,10 +152,13 @@ for scenario in scenarios:
             rec = rec + Recovered[NumEvents]
             EndTime = EndTime + SimTime
 
-#print(Nodes) 
-#print(Infected)
-#print(Times)
-output=np.array([Times, Infected, Susceptible, Recovered])
+#print(Nodes[NumEvents]) 
+print(Infected[NumEvents])
+print(Recovered[NumEvents])
+print(Times[NumEvents])
+print(NumEvents)
+
+output=np.column_stack((Times,Infected,Susceptible,Recovered))
 ## convert your array into a dataframe
 df = pd.DataFrame (output)
 
@@ -138,5 +173,20 @@ plt.ylabel('People')
 plt.title('SIR Network Model')
 plt.legend()
 plt.show()
-    
- 
+
+## Visualise Final Graph
+keys=range(Population)
+attrib=Nodes
+forgraph=dict(zip(keys,attrib))
+
+color_map = []
+for node in G:
+    if (Nodes[node] ==1):
+        color_map.append('blue') #susceptible
+    elif (Nodes [node] ==2 ): 
+        color_map.append('green') #infected
+    else:
+        color_map.append('red') #recovered
+                  
+nx.draw(G, node_color=color_map, with_labels=True)
+plt.show()
