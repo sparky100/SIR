@@ -1,8 +1,30 @@
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
 import pandas as pd
 import networkx as nx
+
+## Visualise Final Graph
+def create_graph(G, Population,Nodes, SimTime, positions):
+       
+    color_map = []
+    for node in G:
+        if (Nodes[node] ==1):
+            color_map.append('blue') #susceptible
+        elif (Nodes [node] ==2 ): 
+            color_map.append('black') #infected
+        else:
+            color_map.append('red') #recovered
+                    
+    plt.title('Epidemic Network Time ='+ str(int(SimTime)))
+    nx.draw(G, node_color=color_map, pos=positions, node_size=50, width=0.5 )
+    plt.savefig(str(round(SimTime))+".png")
+
+    # convert -delay 20 -loop 0 $(ls *.png -t -r) animated.gif to create
+
+
 #
 # Stocahastic SIR model
 #
@@ -19,11 +41,11 @@ SimulationDuration = 120  # assume rates in days
 MaxNumEvents = 10000
 MaxRuns = 200
 RecoveryPeriod = 5  # 5 days to recover
-InitialInfected = 3
+InitialInfected = 2
 
 # Scenarios  - #Dictionary of scenarios, population, country name, Ro, RecoveryPeriod
 
-scenarios = [{"Country": "Scotland", "Population": 1000, "Beta": 30, "RecoveryPeriod": 5}]
+scenarios = [{"Country": "Scotland", "Population": 200, "Beta": 4, "RecoveryPeriod": 5}]
             
 
 for scenario in scenarios:
@@ -68,13 +90,13 @@ for scenario in scenarios:
     #Low have 4 connections, Medium has 10 connections and High = 10 connections
       
 
-    Low=5
-    Medium=10
+    Low=4
+    Medium=8
     High=20
 
-    LowProp = .2
-    MedProp = .6
-    HighProp = .2
+    LowProp = .3
+    MedProp = .2
+    HighProp = .5
 
     LowNum = int(Population*LowProp)
     MedNum = int(Population*MedProp)
@@ -90,6 +112,9 @@ for scenario in scenarios:
 
     G=nx.configuration_model(cm) # Create graph from configuration model
     G=nx.Graph(G)
+    positions=nx.spring_layout(G)
+
+
     #G = nx.from_numpy_matrix(Adj) #Generate graph from adjacency matrix
     ## Visualise Initial Graph
     #pos=nx.spring_layout(G)
@@ -98,6 +123,8 @@ for scenario in scenarios:
     Adj = nx.to_numpy_array(G) #Generates Adjaceny matrix from graph
     #print(Adj)
     SimTime = Times[0]
+    create_graph(G, Population,Nodes, SimTime, positions)
+
     NumEvents = 0
     print("Initial Infected ", Infected[NumEvents])
  
@@ -146,6 +173,10 @@ for scenario in scenarios:
 #            print(count(Infected), count(Recovered))
         
         Times.append(SimTime)
+
+        if (NumEvents % 2 ==0): #
+            create_graph(G, Population,Nodes, SimTime, positions)
+
                    
         if Recovered[NumEvents] > 30:
             outb = outb + 1
@@ -157,6 +188,8 @@ print(Infected[NumEvents])
 print(Recovered[NumEvents])
 print(Times[NumEvents])
 print(NumEvents)
+#Final Output
+create_graph(G, Population,Nodes, SimTime, positions)
 
 output=np.column_stack((Times,Infected,Susceptible,Recovered))
 ## convert your array into a dataframe
@@ -165,6 +198,7 @@ df = pd.DataFrame (output)
 ## save to xlsx file
 filepath = 'output.csv'
 df.to_csv(filepath, index=False)
+plt.close()
 plt.plot(Times,Infected, label='Infected')
 plt.plot(Times,Recovered,label='Recovered')
 plt.plot(Times,Susceptible, label='Susceptible')
@@ -174,19 +208,3 @@ plt.title('SIR Network Model')
 plt.legend()
 plt.show()
 
-## Visualise Final Graph
-keys=range(Population)
-attrib=Nodes
-forgraph=dict(zip(keys,attrib))
-
-color_map = []
-for node in G:
-    if (Nodes[node] ==1):
-        color_map.append('blue') #susceptible
-    elif (Nodes [node] ==2 ): 
-        color_map.append('green') #infected
-    else:
-        color_map.append('red') #recovered
-                  
-nx.draw(G, node_color=color_map, with_labels=True)
-plt.show()
